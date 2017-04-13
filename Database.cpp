@@ -81,6 +81,8 @@ void Database::readfile( ifstream& file ) {
     string pipe = "|"; //should always = | or empty
     bool cont = true;
 
+    int count = 0;
+
     while ( cont ) {
         Entry* entryPtr = new Entry;
         Entry& newEntry = *entryPtr;
@@ -128,5 +130,7 @@ void Database::readfile( ifstream& file ) {
         cout << "|" << endl << endl;
 
         data.addNode( entryPtr );
+        ++count;
     }
+    cout << count << endl;
 }
