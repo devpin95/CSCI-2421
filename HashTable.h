@@ -8,13 +8,17 @@
 #include "Entry.h"
 #include <list>
 #include <stdio.h>
+#include <iostream>
 
 class HashTable {
 public:
     HashTable();
-    void insert( const Entry* );
+    void insert( Entry* );
+    void report();
 private:
-    std::list<Entry*> buckets[4111];
+    const int prime = 150;
+    //std::list<Entry*>* buckets[prime] = {nullptr, };
+    int counters[ 150 ] = { 0, };
 
 };
 
