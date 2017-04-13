@@ -41,3 +41,13 @@ string& Entry::operator[](const int& i) {
     return fields[ fieldNames[i] ];
 }
 
+bool Entry::operator<( Entry* R ) {
+    bool is_same = true;
+
+    if ( this->operator[](Entry::ID) != R->operator[](Entry::ID)  ) {
+        is_same = false;
+    }
+
+    return is_same;
+}
+
