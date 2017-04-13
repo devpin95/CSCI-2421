@@ -47,11 +47,17 @@
 //void closeDatabase( Database& );
 
 using namespace std;
-
+#define ONLAPTOP
+//#define ONDESKTOP
+#ifdef ONLAPTOP
+const char* filename = "C:\\Users\\devpin\\Documents\\school\\CSCI2421\\final\\databaselarge.txt";
+#elif ONDESKTOP
+const char* filename = "C:\\Users\\devpin\\Documents\\school\\CSCI2421\\final\\databaselarge.txt";
+#endif
 int main() {
 
     Database db;
-    db.setDatabase( "C:\\Users\\devin\\Documents\\Devin\\school\\CSCI2421\\final\\hw9\\databasesmall.txt" );
+    db.setDatabase( filename );
 
     if ( !db.connect() ) {
         cout << "Something went wrong" << endl;
