@@ -82,7 +82,7 @@ public:
     ~Entry();
     string& operator[](const string&);
     string& operator[](const int&);
-    bool operator<( const Entry* );
+    bool operator<( Entry* );
 
 private:
     map<string, string> fields; //key = fieldName, value = fieldName value
