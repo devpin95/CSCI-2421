@@ -41,12 +41,12 @@ using std::vector;
 class EntryPrinter {
 public:
     EntryPrinter();
-    void setKeys( const vector<Entry::e_type>& );
+    void setKeys( const vector<string>& );
     void print( const Entry& );
-    void print( const Entry&, const vector<Entry::e_type>& );
+    void print( const Entry&, const vector<string>& );
 
 private:
-    vector<Entry::e_type> keys;
+    vector<string> keys;
 };
 
 
