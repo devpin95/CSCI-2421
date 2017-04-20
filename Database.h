@@ -7,7 +7,7 @@
 //
 //                                Interface for the Database class
 //                  Reads in data from the database text file and stores it to be queried
-//          using the QueryString class and returning a Table class with all the requested entries
+//          using the QueryObject class and returning a Table class with all the requested entries
 //
 //----------------------------------------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
@@ -38,10 +38,11 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include "QueryString.h"
+#include "QueryObject.h"
 #include "Entry.h"
 #include "Table.h"
 #include "BSTree.h"
+#include "HashTable.h"
 
 using std::string;
 
@@ -53,16 +54,21 @@ public:
     bool connect( void ) { return connect( filename ); };
     bool connect( string );
     bool disconnect( void );
-    Table& query( const QueryString& );
-    Table& query( const QueryString&, const Table& );
+    Table& query( const QueryObject& );
+    Table& query( const QueryObject&, const Table& );
 
 private:
     string filename;
     bool connection = false;
     bool ready = false; //a filename must be added before the object is valid
     BSTree data;
+    HashTable hashes;
 
     void readfile( ifstream& );
+    Table& select( const QueryObject& );
+    Table& insert( const QueryObject& );
+    Table& del( const QueryObject& );
+    Table& update( const QueryObject& );
 };
 
 
