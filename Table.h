@@ -38,8 +38,8 @@ class Table {
     friend class EntryPrinter;
 public:
     Table( vector<string> ); //constructor that accepts a vector containing the keys to the column names
-    bool insert( const Entry& ); //function to insert and entry into the table
-    Entry& operator[]( int ); //access an entry in the table
+    bool insert( Entry* ); //function to insert and entry into the table
+    Entry* operator[]( int ); //access an entry in the table
     int size = 0; //increased on each insert
 
 private:
