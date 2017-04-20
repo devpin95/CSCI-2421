@@ -7,7 +7,7 @@
 //
 //                              Implementation for the Database class
 //                  Reads in data from the database text file and stores it to be queried
-//          using the QueryString class and returning a Table class with all the requested entries
+//          using the QueryObject class and returning a Table class with all the requested entries
 //
 //----------------------------------------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
@@ -46,13 +46,28 @@ bool Database::disconnect() {
     return false;
 }
 
-//Table& Database::query(const QueryString&) {
-//
-//}
-//
-//Table& Database::query(const QueryString&, const Table&) {
-//
-//}
+Table& Database::query( const QueryObject& query ) {
+
+    Table* table = new Table( query.getColumns() );
+
+    switch ( query.getAction() ) {
+        case QueryObject::SELECT :
+            //select
+            select( query );
+            break;
+        case QueryObject::UPDATE :
+            //update
+            break;
+        case QueryObject::INSERT :
+            //insert
+            break;
+        case QueryObject::DELETE :
+            //delete
+            break;
+    }
+
+    return *(table);
+}
 
 void Database::readfile( ifstream& file ) {
 //    117094337
@@ -83,7 +98,7 @@ void Database::readfile( ifstream& file ) {
 
     int count = 0;
 
-    while ( cont ) {
+    while ( !file.eof() ) {
         Entry* entryPtr = new Entry;
         Entry& newEntry = *entryPtr;
 
@@ -113,24 +128,25 @@ void Database::readfile( ifstream& file ) {
         }
 
 
-        //if the next line is the |, check the next character
-        //if the next character is EOF, there is no more data to be read
-        //if it is not EOF, there is more data to be read
-        if ( readstring == pipe ) {
-            int c = file.peek();
-            if ( c == EOF ) {
-                cont = false;
-            }
+//        for ( int i = 0; i < Entry::FIELD_COUNT; ++i ) {
+//            cout << newEntry[i] << endl;
+//        }
+//        cout << "|" << endl << endl;
+//
+//        data.addNode( entryPtr );
 
-        }
-
-        for ( int i = 0; i < Entry::FIELD_COUNT; ++i ) {
-            cout << newEntry[i] << endl;
-        }
-        cout << "|" << endl << endl;
-
-        data.addNode( entryPtr );
+        hashes.insert( entryPtr );
+        delete entryPtr;
         ++count;
     }
     cout << count << endl;
+    hashes.report();
+}
+
+Table& Database::select( const QueryObject& query ) {
+    for( int i = 0; i < hashes.prime; ++i ) {
+        if ( hashes.files[i] != nullptr ) {
+
+        }
+    }
 }
