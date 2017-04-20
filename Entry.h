@@ -56,10 +56,9 @@ using std::map;
 
 class Entry {
 public:
-    typedef const char* e_type;
 
     //static variables to reference entry fields outside of the class
-    static const string ID;
+    static constexpr const char* ID = "id";;
     static const string F_NAME;
     static const string M_NAME;
     static const string L_NAME;
