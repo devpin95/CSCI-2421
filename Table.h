@@ -44,7 +44,7 @@ public:
 
 private:
     vector<Entry*> data; //a vector of pointers to each entry
-    vector<Entry::e_type> keys; //the columns that are active in the table (the ones we care about)
+    vector<string> keys; //the columns that are active in the table (the ones we care about)
 };
 
 
