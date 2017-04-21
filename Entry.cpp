@@ -1,6 +1,6 @@
 #include "Entry.h"
 
-const string Entry::ID = "id";
+//const string Entry::ID; // = "id";
 const string Entry::F_NAME = "fname";
 const string Entry::M_NAME = "mname";
 const string Entry::L_NAME = "lname";
@@ -51,3 +51,40 @@ bool Entry::operator<( Entry* R ) {
     return is_same;
 }
 
+bool Entry::operator==( const Entry* l ) {
+    return this->fields[ID] == l->fields[ID];
+}
+
+Entry* Entry::readEntryFromFile( fstream& file ) {
+    Entry* entryPtr = new Entry;
+    Entry& newEntry = *entryPtr;
+    string readstring;
+    string pipe = "|"; //should always = | or empty
+
+    getline( file, newEntry[ Entry::ID ] );
+    getline( file, newEntry[ Entry::F_NAME ] );
+    getline( file, newEntry[ Entry::M_NAME ] );
+    getline( file, newEntry[ Entry::L_NAME ] );
+    getline( file, newEntry[ Entry::COMPANY_NAME ] );
+    getline( file, newEntry[ Entry::HOME_NUMBER ] );
+    getline( file, newEntry[ Entry::OFFICE_NUMBER ] );
+    getline( file, newEntry[ Entry::EMAIL ] );
+    getline( file, newEntry[ Entry::MOBILE_NUMBER ] );
+    getline( file, newEntry[ Entry::ADDRESS ] );
+    getline( file, newEntry[ Entry::CITY ] );
+    getline( file, newEntry[ Entry::STATE ] );
+    getline( file, newEntry[ Entry::ZIP ] );
+    getline( file, newEntry[ Entry::COUNTRY ] );
+
+    getline(file, readstring);
+
+    while ( readstring != pipe ) {
+        newEntry[Entry::AFFILIATES] += readstring;
+        if ( file.peek() != '|' ) {
+            newEntry[Entry::AFFILIATES] += "\n";
+        }
+        getline(file, readstring);
+    }
+
+    return entryPtr;
+}
