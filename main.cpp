@@ -37,8 +37,9 @@
 #include <sstream>
 #include "Database.h"
 #include "Table.h"
-#include "QueryString.h"
+#include "QueryObject.h"
 #include "Entry.h"
+#include "FileObject.h"
 
 //void readFile( Database& );
 //Table& search( Database& );
@@ -50,7 +51,7 @@ using namespace std;
 #define ONLAPTOP
 //#define ONDESKTOP
 #ifdef ONLAPTOP
-const char* filename = "C:\\Users\\devpin\\Documents\\school\\CSCI2421\\final\\databaselarge.txt";
+const char* filename = "C:\\Users\\devpin\\Documents\\school\\CSCI2421\\final\\databasesmall.txt";
 #elif ONDESKTOP
 const char* filename = "C:\\Users\\devpin\\Documents\\school\\CSCI2421\\final\\databaselarge.txt";
 #endif
@@ -59,9 +60,38 @@ int main() {
     Database db;
     db.setDatabase( filename );
 
+    cout << "Connecting..." << endl;
     if ( !db.connect() ) {
         cout << "Something went wrong" << endl;
+    } else {
+
+        cout << "AFTER READ IN" << endl;
+
+        QueryObject query;
+        vector<string> columns = { Entry::ID, Entry::F_NAME, Entry::L_NAME };
+
+        query.setAction(QueryObject::SELECT);
+        query.setColumns( columns );
+        query.setCondition( Entry::ID, QueryObject::EQUALS, "687075432" );
+
+        Table* tablePtr;
+
+        tablePtr = db.query( query );
+
+        Table& table = *tablePtr;
+        if ( !table.isEmpty() ) {
+            cout << table[0]->operator[](Entry::ID) << endl;
+            cout << table[0]->operator[](Entry::F_NAME) << endl;
+            cout << table[0]->operator[](Entry::L_NAME) << endl;
+        } else {
+            cout << "No Entries Found" << endl;
+        }
+
+        cout << "AFTER QUERY" << endl;
+
     }
+
+
 
     //main do-while loop
 //    do {
@@ -146,8 +176,8 @@ int main() {
 //
 //    int key;
 //    string fields; //a concatinated string of fields for the query
-//    QueryString query;
-//    query.setAction( QueryString::SELECT );
+//    QueryObject query;
+//    query.setAction( QueryObject::SELECT );
 //    while ( ss >> key ) {
 //        //since the menu starts at one, the user will enter numbers 1 higher than what they actually want
 //        //based on the array of fieldNames from Entry
@@ -243,8 +273,8 @@ int main() {
 //
 //        //--------------------------------------------------------------------------------------------------------------
 //        //--------------------------------------------------------------------------------------------------------------
-//        //Build a QueryString to search the table
-//        //pass the QueryString and table to Database::query()
+//        //Build a QueryObject to search the table
+//        //pass the QueryObject and table to Database::query()
 //        //--------------------------------------------------------------------------------------------------------------
 //        //--------------------------------------------------------------------------------------------------------------
 //
@@ -259,9 +289,9 @@ int main() {
 //    //set up strings to hold the keys and values
 //    string keyValues;
 //
-//    //Build a QueryString for inserting a new record
-//    QueryString query;
-//    query.setAction( QueryString::INSERT );
+//    //Build a QueryObject for inserting a new record
+//    QueryObject query;
+//    query.setAction( QueryObject::INSERT );
 //
 //    //Get the fields the user wishes to enter and the values using similar loops to the search function
 //    //get the id because it is required
