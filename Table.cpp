@@ -24,6 +24,10 @@ bool Table::insert( Entry* entry ) { //function to insert and entry into the tab
     return false;
 }
 
+bool Table::isEmpty( void ) {
+    return bool(size);
+}
+
 Entry* Table::operator[]( int i ) {
     return data[i];
 }

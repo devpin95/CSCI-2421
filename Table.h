@@ -39,6 +39,7 @@ class Table {
 public:
     Table( vector<string> ); //constructor that accepts a vector containing the keys to the column names
     bool insert( Entry* ); //function to insert and entry into the table
+    bool isEmpty( void ); //function to return if there are no entries in the table
     Entry* operator[]( int ); //access an entry in the table
     int size = 0; //increased on each insert
 
