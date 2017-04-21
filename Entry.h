@@ -50,9 +50,12 @@
 
 #include <map>
 #include <string>
+#include <fstream>
 
 using std::string;
 using std::map;
+using std::ofstream;
+using std::fstream;
 
 class Entry {
 public:
@@ -79,9 +82,12 @@ public:
 
     Entry(); //Default Constructor
     ~Entry();
+    static Entry* readEntryFromFile( fstream& );
     string& operator[](const string&);
     string& operator[](const int&);
+    bool operator==( const Entry* l );
     bool operator<( Entry* );
+    //ofstream& operator<<( Entry* );
 
 private:
     map<string, string> fields; //key = fieldName, value = fieldName value
