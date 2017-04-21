@@ -46,14 +46,19 @@ bool Database::disconnect() {
     return false;
 }
 
-Table& Database::query( const QueryObject& query ) {
+Table* Database::query( const QueryObject& query ) {
 
-    Table* table = new Table( query.getColumns() );
+    Table* table;
 
     switch ( query.getAction() ) {
         case QueryObject::SELECT :
             //select
-            select( query );
+            if ( query.getCondition().key == Entry::ID ) {
+                table = selectExactID( query );
+            }
+            else {
+                select( query );
+            }
             break;
         case QueryObject::UPDATE :
             //update
@@ -66,7 +71,7 @@ Table& Database::query( const QueryObject& query ) {
             break;
     }
 
-    return *(table);
+    return table;
 }
 
 void Database::readfile( ifstream& file ) {
@@ -100,7 +105,8 @@ void Database::readfile( ifstream& file ) {
 
     while ( !file.eof() ) {
 
-        Entry* entryPtr = readEntryFromFile( file );
+        Entry* entryPtr = Entry::readEntryFromFile( file );
+        cout << "NEW ENTRY: " << entryPtr->operator[](Entry::ID) << endl;
 
         hashes.insert( entryPtr );
         delete entryPtr;
@@ -110,67 +116,93 @@ void Database::readfile( ifstream& file ) {
     hashes.report();
 }
 
-Table& Database::select( const QueryObject& query ) {
+Table* Database::select( const QueryObject& query ) {
 
     //loop through the hash files and read in each value
     for( int i = 0; i < hashes.prime; ++i ) {
         if ( hashes.files[i] != nullptr ) {
-            Entry* entry = readEntryFromFile( hashes.files[i]->getFile() );
+            Entry* entry = Entry::readEntryFromFile( hashes.files[i]->getFile() );
 
         }
     }
+
 }
 
-Table& Database::selectExactID( const string& id ) {
+Table* Database::selectExactID( const QueryObject& query ) {
+    //since we are searching for an exact ID, if we hash it and find that the FileObject at that hash
+    //is null, we now that the ID is not in the database.
+    //If it is not null, we know what the ID is in the file in that hashes's bucket, so we can open the file
+    //and read the entries into a binary tree and search that for the ID the get the full entry
+
     //convert the string to a long because the hashing function
     //requires it to be a long, the hash it
-    auto ID_long = long(stol( id ));
-    auto ID_hash = hashes.hash( ID_long );
+    auto ID_long = long(stol( query.getCondition().value ));
+    auto ID_hash = hashes.hasher(ID_long);
 
     //tree to hold all of the entries
     BSTree tree;
+    Table *table = new Table(query.getColumns());
 
-    //while the file in the hash table is not at EOF
-    while ( !( hashes.files[ID_hash]->getFile().eof() ) ) {
-        //create new entries and add them to the tree
-        Entry* entry = readEntryFromFile( hashes.files[ID_hash]->getFile() );
-        tree.addNode( entry );
-    };
+    //check the hash tables FileObject to see if it exists
+    if ( hashes.files[ID_hash]!= nullptr ) {
 
-    tree.findNode(  )
+        //make sure that the file is ready to be read
+        hashes.files[ID_hash]->setForReading();
+
+        //while the file in the hash table is not at EOF
+        while (!(hashes.files[ID_hash]->getFile().eof())) {
+            //create new entries and add them to the tree
+            Entry *entry = Entry::readEntryFromFile(hashes.files[ID_hash]->getFile());
+            tree.addNode(entry);
+        };
+
+
+        //create a new entry with the target ID so that the search can compare with
+        //the values in the tree
+        Entry *entry_key = new Entry;
+        entry_key->operator[](Entry::ID) = query.getCondition().value;
+
+        //search the tree for the node
+        Node *entry = tree.findNode(entry_key, tree.Root());
+
+        //if the search found a node, insert the node data into the table
+        if (entry != nullptr) {
+            table->insert(entry->Key());
+        }
+    }
+
+    return table;
 
 }
 
-Entry* Database::readEntryFromFile( fstream& file ) {
-    Entry* entryPtr = new Entry;
-    Entry& newEntry = *entryPtr;
-    string readstring;
-    string pipe = "|"; //should always = | or empty
+bool Database::evaluateConditions( Entry* entryPtr, const QueryObject& query ) {
+    bool is_match = false; //bool to hold the result of the condition check
 
-    getline( file, newEntry[ Entry::ID ] );
-    getline( file, newEntry[ Entry::F_NAME ] );
-    getline( file, newEntry[ Entry::M_NAME ] );
-    getline( file, newEntry[ Entry::L_NAME ] );
-    getline( file, newEntry[ Entry::COMPANY_NAME ] );
-    getline( file, newEntry[ Entry::HOME_NUMBER ] );
-    getline( file, newEntry[ Entry::OFFICE_NUMBER ] );
-    getline( file, newEntry[ Entry::EMAIL ] );
-    getline( file, newEntry[ Entry::MOBILE_NUMBER ] );
-    getline( file, newEntry[ Entry::ADDRESS ] );
-    getline( file, newEntry[ Entry::CITY ] );
-    getline( file, newEntry[ Entry::STATE ] );
-    getline( file, newEntry[ Entry::ZIP ] );
-    getline( file, newEntry[ Entry::COUNTRY ] );
+    //dereference the pointer so that we can access it like normal
+    Entry& entry = *entryPtr;
 
-    getline(file, readstring);
+    //First, check what condition we are checking for
+    //EQUALS (exact match)
+    //CONTAINS (field contains the value)
 
-    while ( readstring != pipe ) {
-        newEntry[Entry::AFFILIATES] += readstring;
-        if ( file.peek() != '|' ) {
-            newEntry[Entry::AFFILIATES] += "\n";
-        }
-        getline(file, readstring);
+    string key = query.getCondition().key;
+    string value = query.getCondition().value;
+
+    //EQUALS - exact match
+    if ( query.getCondition().operations == QueryObject::EQUALS) {
+        is_match = ( entry[ key ] == value );
     }
 
-    return entryPtr;
+    //CONTAINS- field contains the value
+    else if ( query.getCondition().operations == QueryObject::CONTAINS ) {
+        //Use find to search the field for the value. If the value is found in
+        //the field, it will return an unsigned int. If not found, string::npos
+        //string::find referenced from
+        //http://www.cplusplus.com/reference/string/string/find/
+        if ( key.find( value ) != string::npos ) {
+            is_match = true;
+        }
+    }
+
+    return is_match;
 }

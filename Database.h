@@ -54,9 +54,9 @@ public:
     bool connect( void ) { return connect( filename ); };
     bool connect( string );
     bool disconnect( void );
-    Table& query( const QueryObject& );
+    Table* query( const QueryObject& );
     Table& query( const QueryObject&, const Table& );
-    Entry* readEntryFromFile( fstream& );
+    static bool evaluateConditions( Entry*, const QueryObject& );
 
 private:
     string filename;
@@ -66,11 +66,9 @@ private:
     HashTable hashes;
 
     void readfile( ifstream& );
-    Table& select( const QueryObject& );
-    Table& selectExactID( const string& id );
-    Table& insert( const QueryObject& );
-    Table& del( const QueryObject& );
-    Table& update( const QueryObject& );
+    Table* select( const QueryObject& );
+    Table* selectExactID( const QueryObject& );
+    Table* update( const QueryObject& );
 };
 
 
