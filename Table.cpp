@@ -13,8 +13,8 @@
 
 #include "Table.h"
 
-Table::Table( vector<string> ) {
-
+Table::Table( const vector<string>& table_keys ) {
+    keys = table_keys;
 }
 
 bool Table::insert( Entry* entry ) { //function to insert and entry into the table
@@ -25,7 +25,7 @@ bool Table::insert( Entry* entry ) { //function to insert and entry into the tab
 }
 
 bool Table::isEmpty( void ) {
-    return bool(size);
+    return !( bool(size) );
 }
 
 Entry* Table::operator[]( int i ) {
