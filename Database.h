@@ -56,6 +56,7 @@ public:
     bool disconnect( void );
     Table& query( const QueryObject& );
     Table& query( const QueryObject&, const Table& );
+    Entry* readEntryFromFile( fstream& );
 
 private:
     string filename;
@@ -66,6 +67,7 @@ private:
 
     void readfile( ifstream& );
     Table& select( const QueryObject& );
+    Table& selectExactID( const string& id );
     Table& insert( const QueryObject& );
     Table& del( const QueryObject& );
     Table& update( const QueryObject& );
