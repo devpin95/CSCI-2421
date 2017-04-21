@@ -99,41 +99,8 @@ void Database::readfile( ifstream& file ) {
     int count = 0;
 
     while ( !file.eof() ) {
-        Entry* entryPtr = new Entry;
-        Entry& newEntry = *entryPtr;
 
-        getline( file, newEntry[ Entry::ID ] );
-        getline( file, newEntry[ Entry::F_NAME ] );
-        getline( file, newEntry[ Entry::M_NAME ] );
-        getline( file, newEntry[ Entry::L_NAME ] );
-        getline( file, newEntry[ Entry::COMPANY_NAME ] );
-        getline( file, newEntry[ Entry::HOME_NUMBER ] );
-        getline( file, newEntry[ Entry::OFFICE_NUMBER ] );
-        getline( file, newEntry[ Entry::EMAIL ] );
-        getline( file, newEntry[ Entry::MOBILE_NUMBER ] );
-        getline( file, newEntry[ Entry::ADDRESS ] );
-        getline( file, newEntry[ Entry::CITY ] );
-        getline( file, newEntry[ Entry::STATE ] );
-        getline( file, newEntry[ Entry::ZIP ] );
-        getline( file, newEntry[ Entry::COUNTRY ] );
-
-        getline(file, readstring);
-
-        while ( readstring != pipe ) {
-            newEntry[Entry::AFFILIATES] += readstring;
-            if ( file.peek() != '|' ) {
-                newEntry[Entry::AFFILIATES] += "\n";
-            }
-            getline(file, readstring);
-        }
-
-
-//        for ( int i = 0; i < Entry::FIELD_COUNT; ++i ) {
-//            cout << newEntry[i] << endl;
-//        }
-//        cout << "|" << endl << endl;
-//
-//        data.addNode( entryPtr );
+        Entry* entryPtr = readEntryFromFile( file );
 
         hashes.insert( entryPtr );
         delete entryPtr;
@@ -144,9 +111,66 @@ void Database::readfile( ifstream& file ) {
 }
 
 Table& Database::select( const QueryObject& query ) {
+
+    //loop through the hash files and read in each value
     for( int i = 0; i < hashes.prime; ++i ) {
         if ( hashes.files[i] != nullptr ) {
+            Entry* entry = readEntryFromFile( hashes.files[i]->getFile() );
 
         }
     }
+}
+
+Table& Database::selectExactID( const string& id ) {
+    //convert the string to a long because the hashing function
+    //requires it to be a long, the hash it
+    auto ID_long = long(stol( id ));
+    auto ID_hash = hashes.hash( ID_long );
+
+    //tree to hold all of the entries
+    BSTree tree;
+
+    //while the file in the hash table is not at EOF
+    while ( !( hashes.files[ID_hash]->getFile().eof() ) ) {
+        //create new entries and add them to the tree
+        Entry* entry = readEntryFromFile( hashes.files[ID_hash]->getFile() );
+        tree.addNode( entry );
+    };
+
+    tree.findNode(  )
+
+}
+
+Entry* Database::readEntryFromFile( fstream& file ) {
+    Entry* entryPtr = new Entry;
+    Entry& newEntry = *entryPtr;
+    string readstring;
+    string pipe = "|"; //should always = | or empty
+
+    getline( file, newEntry[ Entry::ID ] );
+    getline( file, newEntry[ Entry::F_NAME ] );
+    getline( file, newEntry[ Entry::M_NAME ] );
+    getline( file, newEntry[ Entry::L_NAME ] );
+    getline( file, newEntry[ Entry::COMPANY_NAME ] );
+    getline( file, newEntry[ Entry::HOME_NUMBER ] );
+    getline( file, newEntry[ Entry::OFFICE_NUMBER ] );
+    getline( file, newEntry[ Entry::EMAIL ] );
+    getline( file, newEntry[ Entry::MOBILE_NUMBER ] );
+    getline( file, newEntry[ Entry::ADDRESS ] );
+    getline( file, newEntry[ Entry::CITY ] );
+    getline( file, newEntry[ Entry::STATE ] );
+    getline( file, newEntry[ Entry::ZIP ] );
+    getline( file, newEntry[ Entry::COUNTRY ] );
+
+    getline(file, readstring);
+
+    while ( readstring != pipe ) {
+        newEntry[Entry::AFFILIATES] += readstring;
+        if ( file.peek() != '|' ) {
+            newEntry[Entry::AFFILIATES] += "\n";
+        }
+        getline(file, readstring);
+    }
+
+    return entryPtr;
 }
