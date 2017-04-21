@@ -37,7 +37,7 @@
 #define HW9_FILEOBJECT_H
 
 #include <iostream>
-#include <stdio.h>
+#include <fstream>
 #include <string>
 
 using std::string;
@@ -50,7 +50,7 @@ public:
     bool append(const string&);
     string filename;
 private:
-    FILE * file;
+    std::fstream file;
     bool is_open = false;
     bool close();
     bool open();
