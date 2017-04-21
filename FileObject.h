@@ -41,6 +41,7 @@
 #include <string>
 
 using std::string;
+using std::fstream;
 
 class FileObject {
 public:
@@ -48,12 +49,15 @@ public:
     FileObject( const string& );
     ~FileObject();
     bool append(const string&);
+    bool setForReading();
+    bool setForWriting();
+    fstream& getFile(){ return file; };
     string filename;
 private:
     std::fstream file;
-    bool is_open = false;
+    bool is_open_for_writing = false;
+    bool is_open_for_reading = false;
     bool close();
-    bool open();
 };
 
 
