@@ -69,28 +69,80 @@ void BSTree::addNode(Entry* key, Node* leaf) {
 }
 
 // Find a node
-Node* BSTree::findNode(Entry* key, Node* node)
-{
-
+Node* BSTree::findNode(Entry* key, Node* node) {
+    //check if the root node is the target key
+    if ( key == node->Key() ) {
+        //the root node is the target, return it
+        return node;
+    }
+        //otherwise, we need to go left or right
+    else {
+        if ( key < node->Key()) {
+            //go left
+            if ( node->Left() != nullptr ) {
+                return findNode(key, node->Left());
+            } else {
+                //if left is null on the current node
+                //then we can't go any further, so the target key
+                //must not be in the tree
+                return nullptr;
+            }
+        } else if ( key > node->Key() ) {
+            //go right
+            if ( node->Right() != nullptr ) {
+                return findNode(key, node->Right());
+            } else {
+                //if the right is null on the current node
+                //then we can't go any further and the target key
+                //must not be in the tree
+                return nullptr;
+            }
+        }
+    }
 }
 
 // Print the BSTree
-void BSTree::printPreorder(Node* node)
-{
-    
-}
-void BSTree::printInorder(Node* node)
-{
+void BSTree::printPreorder(Node* node) {
+    //preorder:
+    //1 - visit
+    //2 - go left
+    //3 - go right
 
-    
+    //first, make sure the root node is not null
+    if ( node != nullptr ) {
+        cout << node->Key() << " "; //visit the root node
+        printPreorder(node->Left()); //go to the left
+        printPreorder(node->Right()); //go to the right
+    }
+
+}
+void BSTree::printInorder(Node* node) {
+    //inorder:
+    //2 - go left
+    //1 - visit
+    //3 - go right
+
+    //first, make sure the root node is not null
+    if ( node != nullptr ) {
+        printInorder(node->Left()); //go to the left
+        cout << node->Key() << " "; //visit the root node
+        printInorder(node->Right()); //go to the right
+    }
 }
 
-void BSTree::printPostorder(Node* node)
-{
+void BSTree::printPostorder(Node* node) {
+    //inorder:
+    //2 - go left
+    //3 - go right
+    //1 - visit
+
+    //first, make sure the root node is not null
     if ( node != nullptr)
     {
-        
-            }
+        printPostorder(node->Left()); //go to the left
+        printPostorder(node->Right()); //go to the right
+        cout << node->Key() << " "; //visit the root node
+    }
 }
 
 // Find the node with min key
