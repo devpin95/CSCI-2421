@@ -34,7 +34,7 @@ bool FileObject::append(const string& data) {
     bool success = false;
 
     if ( is_open ) {
-        fputs( data.c_str(), file );
+        file << data;
     } else {
         open();
         success = append( data );
@@ -46,8 +46,8 @@ bool FileObject::append(const string& data) {
 bool FileObject::open() {
     is_open = false;
     if ( !filename.empty() ) {
-        file = fopen( filename.c_str(), "a" );
-        if ( file!= nullptr ){
+        file.open(filename);
+        if ( file.is_open() ){
             is_open = true;
         }
     }
@@ -57,7 +57,7 @@ bool FileObject::open() {
 
 bool FileObject::close() {
     if ( is_open ) {
-        fclose( file );
+        file.close();
     }
 
     return is_open;
