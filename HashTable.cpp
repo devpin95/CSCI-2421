@@ -24,7 +24,7 @@ void HashTable::insert( Entry* entry ) {
     long idi = stol( id );
 
     //hash the id
-    long hash = idi % prime;
+    long hash = hasher(idi);
     ++counters[hash];
 
     if ( files[hash] == nullptr ) {

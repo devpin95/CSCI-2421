@@ -12,11 +12,14 @@
 #include <iostream>
 
 class HashTable {
+    friend class Database;
+
 public:
     HashTable();
     ~HashTable();
     void insert( Entry* );
     void report();
+    long hasher(const long &id) {return id % prime;};
 private:
     const static int prime = 167;
     FileObject* files[ prime ] { nullptr, };
