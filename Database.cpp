@@ -167,8 +167,11 @@ Table* Database::selectExactID( const QueryObject& query ) {
 
         //if the search found a node, insert the node data into the table
         if (entry != nullptr) {
-            table->insert(entry->Key());
+            Entry* row = new Entry( entry->Key() );
+            table->insert( row );
         }
+
+        delete entry_key;
     }
 
     return table;
