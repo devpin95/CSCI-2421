@@ -54,6 +54,7 @@
 
 using std::string;
 using std::map;
+using std::ifstream;
 using std::ofstream;
 using std::fstream;
 
@@ -83,10 +84,12 @@ public:
     Entry(); //Default Constructor
     ~Entry();
     static Entry* readEntryFromFile( fstream& );
+    static Entry* readEntryFromFile( ifstream& );
     string& operator[](const string&);
     string& operator[](const int&);
-    bool operator==( const Entry* l );
+    bool operator==( Entry* );
     bool operator<( Entry* );
+    Entry* operator=( Entry* );
     //ofstream& operator<<( Entry* );
 
 private:
