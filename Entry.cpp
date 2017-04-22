@@ -27,6 +27,10 @@ Entry::Entry() {
     }
 }
 
+Entry::Entry( const Entry* right ) {
+    this->fields = right->fields;
+}
+
 Entry::~Entry() {
     for ( int i = 0; i < FIELD_COUNT; ++i ) {
         fields[ fieldNames[i] ] = "";
@@ -41,40 +45,36 @@ string& Entry::operator[](const int& i) {
     return fields[ fieldNames[i] ];
 }
 
-bool Entry::operator<( Entry* R ) {
-    bool is_same = true;
+bool Entry::operator<(const Entry &R) {
+    bool is_same = false;
 
-    if ( this->operator[](Entry::ID) != R->operator[](Entry::ID)  ) {
-        is_same = false;
+    //convert the IDs to longs so that they can be compared
+    long thisID = stol( fields[ID] );
+    long thatID = stol( R.fields[ID] );
+
+    if ( thisID < thatID ) {
+        is_same = true;
     }
 
     return is_same;
 }
 
-bool Entry::operator==( Entry* r ) {
-    return fields[ID] == r->fields[Entry::ID];
+bool Entry::operator==( const Entry& R ) {
+    return fields[ID] == R.fields[ID];
 }
 
-Entry* Entry::operator=( Entry* r ) {
-    Entry& right = *r;
-    Entry& left = *this;
+bool Entry::operator>(const Entry &R) {
+    bool is_same = false;
 
-    left[ID] = right[ID];
-    left[F_NAME] = right[F_NAME];
-    left[M_NAME] = right[M_NAME];
-    left[L_NAME] = right[L_NAME];
-    left[COMPANY_NAME] = right[COMPANY_NAME];
-    left[HOME_NUMBER] = right[HOME_NUMBER];
-    left[OFFICE_NUMBER] = right[OFFICE_NUMBER];
-    left[MOBILE_NUMBER] = right[MOBILE_NUMBER];
-    left[EMAIL] = right[EMAIL];
-    left[ADDRESS] = right[ADDRESS];
-    left[CITY] = right[CITY];
-    left[STATE] = right[STATE];
-    left[COUNTRY] = right[COUNTRY];
-    left[AFFILIATES] = right[AFFILIATES];
+    //convert the IDs to longs so that they can be compared
+    long thisID = stol( fields[ID] );
+    long thatID = stol( R.fields[ID] );
 
-    return this;
+    if ( thisID > thatID ) {
+        is_same = true;
+    }
+
+    return is_same;
 }
 
 Entry* Entry::readEntryFromFile( fstream& file ) {

@@ -82,14 +82,16 @@ public:
     static const string fieldNames[ FIELD_COUNT ];
 
     Entry(); //Default Constructor
+    Entry(const Entry*); //Copy constructor
     ~Entry();
     static Entry* readEntryFromFile( fstream& );
     static Entry* readEntryFromFile( ifstream& );
     string& operator[](const string&);
     string& operator[](const int&);
-    bool operator==( Entry* );
-    bool operator<( Entry* );
-    Entry* operator=( Entry* );
+    bool operator==( const Entry& );
+    bool operator<(const Entry &);
+    bool operator>(const Entry &);
+    //Entry* operator=( Entry* );
     //ofstream& operator<<( Entry* );
 
 private:
