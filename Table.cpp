@@ -17,6 +17,14 @@ Table::Table( const vector<string>& table_keys ) {
     keys = table_keys;
 }
 
+Table::~Table( void ) {
+    for ( int i = 0; i < data.size(); ++i ) {
+        Entry* entry = (*data.end());
+        data.pop_back();
+        delete entry;
+    }
+}
+
 bool Table::insert( Entry* entry ) { //function to insert and entry into the table
     data.push_back( entry );
     ++size;
