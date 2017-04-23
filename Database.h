@@ -54,7 +54,7 @@ public:
     bool connect( void ) { return connect( filename ); };
     bool connect( string );
     bool disconnect( void );
-    Table* query( const QueryObject& );
+    Table* query(const QueryObject&, Entry *in = nullptr);
     Table& query( const QueryObject&, const Table& );
     static bool evaluateConditions( Entry*, const QueryObject& );
 
@@ -69,6 +69,7 @@ private:
     Table* select( const QueryObject& );
     Table* selectExactID( const QueryObject& );
     Table* update( const QueryObject& );
+    Table* insert( Entry* );
 };
 
 
