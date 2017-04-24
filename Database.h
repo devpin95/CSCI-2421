@@ -68,9 +68,114 @@ private:
     void readfile( ifstream& );
     Table* select( const QueryObject& );
     Table* selectExactID( const QueryObject& );
-    Table* update( const QueryObject& );
+    Table* update( const QueryObject&,  Entry* );
+    Table* updateExactID( const QueryObject&,  Entry* );
     Table* insert( Entry* );
+    Table* delExactID( const QueryObject& );
+    Table* del( const QueryObject& );
+
 };
 
+struct AddEvaluate {
+    Table* tbl = nullptr;
+    Condition condition;
+
+    void eval(Entry *entryPtr) {
+        bool is_match = false; //bool to hold the result of the condition check
+
+        //dereference the pointer so that we can access it like normal
+        Entry& entry = *entryPtr;
+
+        //First, check what condition we are checking for
+        //EQUALS (exact match)
+        //CONTAINS (field contains the value)
+
+        string key = entry[condition.key];
+        string value = condition.value;
+
+        //cout << "|  " << entry[ key ] << " - " << value << endl;
+
+        //EQUALS - exact match
+        if ( condition.operation == QueryObject::EQUALS) {
+            is_match = ( key == value );
+        }
+
+            //CONTAINS- field contains the value
+        else if ( condition.operation == QueryObject::CONTAINS ) {
+            //Use find to search the field for the value. If the value is found in
+            //the field, it will return an unsigned int. If not found, string::npos
+            //string::find referenced from
+            //http://www.cplusplus.com/reference/string/string/find/
+            if ( key.find( value ) != std::string::npos ) {
+                is_match = true;
+            }
+        }
+
+        if ( is_match ) {
+            Entry* row = new Entry( entryPtr );
+            tbl->insert( row );
+        }
+    };
+};
+
+struct DeleteEvaluate {
+    Table* tbl = nullptr;
+    Condition condition;
+    Node* node;
+
+    bool eval(Entry *entryPtr) {
+        bool is_match = false; //bool to hold the result of the condition check
+
+        //dereference the pointer so that we can access it like normal
+        Entry& entry = *entryPtr;
+
+        //First, check what condition we are checking for
+        //EQUALS (exact match)
+        //CONTAINS (field contains the value)
+
+        string key = entry[condition.key];
+        string value = condition.value;
+
+        //cout << "|  " << entry[ key ] << " - " << value << endl;
+
+        //EQUALS - exact match
+        if ( condition.operation == QueryObject::EQUALS) {
+            is_match = ( key == value );
+        }
+
+            //CONTAINS- field contains the value
+        else if ( condition.operation == QueryObject::CONTAINS ) {
+            //Use find to search the field for the value. If the value is found in
+            //the field, it will return an unsigned int. If not found, string::npos
+            //string::find referenced from
+            //http://www.cplusplus.com/reference/string/string/find/
+            if ( key.find( value ) != std::string::npos ) {
+                is_match = true;
+            }
+        }
+
+        if ( is_match ) {
+            Entry* row = entryPtr;
+            entryPtr = nullptr;
+            tbl->insert( row );
+        }
+
+        return is_match;
+    };
+};
+
+struct WriteEvaluate {
+    HashTable* hashtable;
+    int count = 0;
+
+    void eval(Entry *entryPtr) {
+        if ( count == 0 ) {
+            hashtable->insert(entryPtr, true);
+        } else {
+            hashtable->insert(entryPtr);
+        }
+        ++count;
+    };
+};
 
 #endif //CSCI2421_DATABASE_H

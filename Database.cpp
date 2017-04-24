@@ -57,15 +57,21 @@ Table* Database::query(const QueryObject &query, Entry *in) {
     switch ( query.getAction() ) {
         case QueryObject::SELECT :
             //select
-            if ( query.getCondition().key == Entry::ID ) {
+            if ( query.getCondition().key == Entry::ID && query.getCondition().operation == QueryObject::EQUALS ) {
                 table = selectExactID( query );
             }
             else {
-                select( query );
+                table = select( query );
             }
             break;
         case QueryObject::UPDATE :
             //update
+            if ( query.getCondition().key == Entry::ID && query.getCondition().operation == QueryObject::EQUALS ) {
+                table = updateExactID( query, in );
+            }
+            else {
+                table = update( query, in );
+            }
             break;
         case QueryObject::INSERT :
             //insert
@@ -73,6 +79,12 @@ Table* Database::query(const QueryObject &query, Entry *in) {
             break;
         case QueryObject::DELETE :
             //delete
+            if ( query.getCondition().key == Entry::ID && query.getCondition().operation == QueryObject::EQUALS ) {
+                table = delExactID( query );
+            }
+            else {
+                table = del( query );
+            }
             break;
     }
 
@@ -127,12 +139,21 @@ Table* Database::select( const QueryObject& query ) {
 
             BSTree tree;
 
+            hashes.files[i]->setForReading();
+
             //while the file in the hash table is not at EOF
             while (!(hashes.files[i]->getFile().eof())) {
                 //create new entries and add them to the tree
                 Entry *entry = Entry::readEntryFromFile(hashes.files[i]->getFile());
                 tree.addNode(entry);
             };
+
+            //create a new eval object
+            AddEvaluate eval;
+            eval.tbl = table;
+            eval.condition = query.getCondition();
+            tree.inorder( tree.Root(), eval );
+
         }
     }
 
@@ -140,6 +161,268 @@ Table* Database::select( const QueryObject& query ) {
 }
 
 Table* Database::selectExactID( const QueryObject& query ) {
+    //since we are searching for an exact ID, if we hash it and find that the FileObject at that hash
+    //is null, we now that the ID is not in the database.
+    //If it is not null, we know what the ID is in the file in that hashes's bucket, so we can open the file
+    //and read the entries into a binary tree and search that for the ID the get the full entry
+
+    //convert the string to a long because the hashing function
+    //requires it to be a long, the hash it
+    auto ID_long = long(stol( query.getCondition().value ));
+    auto ID_hash = hashes.hashify(ID_long);
+
+    //tree to hold all of the entries
+    BSTree tree;
+    Table *table = new Table(query.getColumns());
+
+    //check the hash tables FileObject to see if it exists and that it is not empty
+    if ( hashes.files[ID_hash]!= nullptr && hashes.counters[ID_hash] > 0 ) {
+
+        //make sure that the file is ready to be read
+        hashes.files[ID_hash]->setForReading();
+
+        //while the file in the hash table is not at EOF
+        while (!(hashes.files[ID_hash]->getFile().eof())) {
+            //create new entries and add them to the tree
+            Entry *entry = Entry::readEntryFromFile(hashes.files[ID_hash]->getFile());
+            tree.addNode(entry);
+        };
+
+
+        //create a new entry with the target ID so that the search can compare with
+        //the values in the tree
+        Entry *temp_entry = new Entry;
+        temp_entry->operator[](Entry::ID) = query.getCondition().value;
+
+        //search the tree for the node
+        Node *entry = tree.findNode(temp_entry, tree.Root());
+
+        //if the search found a node, insert the node data into the table
+        if (entry != nullptr) {
+            //make a copy of the node key so that it is not deleted at the end of the function
+            //Table now owns the entry pointer
+            Entry* row = new Entry( entry->Key() );
+            table->insert( row );
+        }
+
+        //delete the temp entry
+        delete temp_entry;
+    }
+
+    return table;
+
+}
+
+Table* Database::update( const QueryObject& query, Entry* entryPtr ) {
+    //make a new table with the current query's columns
+    Table* table = new Table( query.getColumns() );
+
+    //loop through the hash files and read in each value
+    for( int i = 0; i < hashes.prime; ++i ) {
+        if ( hashes.files[i] != nullptr ) {
+
+            BSTree tree;
+
+            hashes.files[i]->setForReading();
+
+            //while the file in the hash table is not at EOF
+            while (!(hashes.files[i]->getFile().eof())) {
+                //create new entries and add them to the tree
+                Entry *entry = Entry::readEntryFromFile(hashes.files[i]->getFile());
+                tree.addNode(entry);
+            };
+
+            //create a new eval object
+            //and traverse the tree
+            //eval's node variable will hold a pointer to the node with the target entry
+            DeleteEvaluate eval;
+            eval.tbl = table;
+            eval.condition = query.getCondition();
+            tree.preorder( tree.Root(), eval );
+
+            if ( !table->isEmpty() ) {
+                Node* entry = eval.node;
+                //if the table is not empty, then a value was found
+                //rewrite the tree to disk
+
+                //First, copy the entry passed to the entry in the tree before it gets rewritten to disk
+                (*entry->Key()) = *entryPtr;
+
+                //rewrite the file with the new information
+                WriteEvaluate writer;
+                writer.hashtable = &hashes;
+                tree.postorder(tree.Root(), writer);
+
+                //break out of the loop because we've deleted one of the entries
+                break;
+            }
+        }
+    }
+
+    return table;
+}
+
+Table* Database::updateExactID( const QueryObject& query, Entry* entryPtr ) {
+    //convert the string to a long because the hashing function
+    //requires it to be a long, the hash it
+    auto ID_long = long(stol( query.getCondition().value ));
+    auto ID_hash = hashes.hashify(ID_long);
+
+    //tree to hold all of the entries
+    BSTree tree;
+    Table *table = new Table(query.getColumns());
+
+    //check the hash tables FileObject to see if it exists and that it is not empty
+    if ( hashes.files[ID_hash]!= nullptr && hashes.counters[ID_hash] > 0 ) {
+
+        //make sure that the file is ready to be read
+        hashes.files[ID_hash]->setForReading();
+
+        //while the file in the hash table is not at EOF
+        while (!(hashes.files[ID_hash]->getFile().eof())) {
+            //create new entries and add them to the tree
+            Entry *entry = Entry::readEntryFromFile(hashes.files[ID_hash]->getFile());
+            tree.addNode(entry);
+        };
+
+
+        //create a new entry with the target ID so that the search can compare with
+        //the values in the tree
+        Entry *temp_entry = new Entry;
+        temp_entry->operator[](Entry::ID) = query.getCondition().value;
+
+        //search the tree for the node
+        Node *entry = tree.findNode(temp_entry, tree.Root());
+
+        //if the search found a node, insert the node data into the table
+        if (entry != nullptr) {
+            //First, copy the entry passed in into the entry of the tree
+            (*entry->Key()) = *entryPtr;
+
+            //make a copy of the node key so that it is not deleted at the end of the function
+            //Table now owns the entry pointer
+            Entry* row = new Entry( entry->Key() );
+            table->insert( row );
+
+            //rewrite the file with the new information
+            WriteEvaluate writer;
+            writer.hashtable = &hashes;
+            tree.postorder(tree.Root(), writer);
+            hashes.counters[ID_hash] = writer.count;
+        }
+
+        //delete the temp entry
+        delete temp_entry;
+    }
+
+    return table;
+}
+
+Table* Database::insert( Entry* entryPtr ) {
+    // insert()
+    // PRECONDITION: All data in entry is value, ID must be included
+    //
+    // POSTCONDITION: Entry is added to the database. If the insert succeeds, a table with the entry
+    // is returned. If insert fails, an empty table is returned
+
+    Table* table = nullptr;
+
+    Entry& entry = *entryPtr;
+
+    auto ID_long = long(stol( entry[Entry::ID] ));
+    auto ID_hash = hashes.hashify(ID_long);
+
+    //test to see if there is an entry at hashes.files[ID_hash]
+    if ( hashes.files[ID_hash] == nullptr ) {
+        //if the file does not exists, then there must not be an entry with the same
+        //ID that already exists
+        hashes.insert( entryPtr );
+    } else {
+        //There must be at least one entry that hashes to the same value
+        //So we need to search that file to see if an entry with the same
+        //id already exists. Make a query with the correct data and see what
+        //the selectExactId function returns
+        QueryObject query;
+        vector<string> cols = { Entry::ID };
+        query.setColumns( cols );
+        query.setAction( QueryObject::SELECT );
+        query.setCondition( Entry::ID, QueryObject::EQUALS, entry[Entry::ID] );
+        table = selectExactID( query );
+
+        if ( table->isEmpty() ) {
+            //the table is empty. That means that an entry does not exists with the same ID
+            hashes.insert( entryPtr );
+            delete table;
+            vector<string> keys;
+            table = new Table( keys );
+            table->insert( entryPtr );
+        } else {
+            //The table is not empty. That means that an entry does exists with the same ID
+            //so we cannot add the entry to the database
+            delete table;
+            vector<string> keys;
+            table = new Table( keys );
+        }
+
+    }
+
+    return table;
+}
+
+Table* Database::del( const QueryObject& query ) {
+
+    Table *table = new Table(query.getColumns());
+
+    //loop through the hash files and read in each value
+    for( int i = 0; i < hashes.prime; ++i ) {
+        if ( hashes.files[i] != nullptr ) {
+
+            BSTree tree;
+
+            hashes.files[i]->setForReading();
+
+            //while the file in the hash table is not at EOF
+            while (!(hashes.files[i]->getFile().eof())) {
+                //create new entries and add them to the tree
+                Entry *entry = Entry::readEntryFromFile(hashes.files[i]->getFile());
+                tree.addNode(entry);
+            };
+
+            //create a new eval object
+            DeleteEvaluate eval;
+            eval.tbl = table;
+            eval.condition = query.getCondition();
+            tree.preorder( tree.Root(), eval );
+
+            if ( !table->isEmpty() ) {
+                //if the table is not empty, then a value was found
+                //delete the node from the tree, and rewrite the tree to disk
+                tree.deleteNode( eval.node->Key() );
+
+                if ( hashes.counters[i] == 0 ) {
+                    //if there are no entries in the file, just erase it
+                    //to set it back to an intial state
+                    hashes.files[i]->erase();
+                } else {
+                    //if there is at least one entry in the file
+                    //rewrite the tree to file with the entry removed
+                    WriteEvaluate writer;
+                    writer.hashtable = &hashes;
+                    tree.postorder(tree.Root(), writer);
+                    hashes.counters[i] = writer.count;
+                }
+
+                //break out of the loop because we've deleted one of the entries
+                break;
+            }
+        }
+    }
+
+    return table;
+
+}
+
+Table* Database::delExactID( const QueryObject& query ) {
     //since we are searching for an exact ID, if we hash it and find that the FileObject at that hash
     //is null, we now that the ID is not in the database.
     //If it is not null, we know what the ID is in the file in that hashes's bucket, so we can open the file
@@ -182,58 +465,22 @@ Table* Database::selectExactID( const QueryObject& query ) {
             //Table now owns the entry pointer
             Entry* row = new Entry( entry->Key() );
             table->insert( row );
+            tree.deleteNode( entry->Key() );
+            --hashes.counters[ID_hash];
+
+            if ( hashes.counters[ID_hash] == 0 ) {
+                hashes.files[ID_hash]->erase();
+            } else {
+                //rewrite the tree to file with the entry removed
+                WriteEvaluate writer;
+                writer.hashtable = &hashes;
+                tree.postorder(tree.Root(), writer);
+                hashes.counters[ID_hash] = writer.count;
+            }
         }
 
         //delete the temp entry
         delete temp_entry;
-    }
-
-    return table;
-
-}
-
-Table* Database::insert( Entry* entryPtr ) {
-    // insert()
-    // PRECONDITION: All data in entry is value, ID must be included
-    //
-    // POSTCONDITION: Entry is added to the database. If insert fails, an empty table
-    // is returned
-
-    Table* table = nullptr;
-
-    Entry& entry = *entryPtr;
-
-    auto ID_long = long(stol( entry[Entry::ID] ));
-    auto ID_hash = hashes.hashify(ID_long);
-
-    //test to see if there is an entry at hashes.files[ID_hash]
-    if ( hashes.files[ID_hash] == nullptr ) {
-        //if the file does not exists, then there must not be an entry with the same
-        //ID that already exists
-        hashes.insert( entryPtr );
-    } else {
-        //There must be at least one entry that hashes to the same value
-        //So we need to search that file to see if an entry with the same
-        //id already exists. Make a query with the correct data and see what
-        //the selectExactId function returns
-        QueryObject query;
-        vector<string> cols = { Entry::ID };
-        query.setColumns( cols );
-        query.setAction( QueryObject::SELECT );
-        query.setCondition( Entry::ID, QueryObject::EQUALS, entry[Entry::ID] );
-        table = selectExactID( query );
-
-        if ( table->isEmpty() ) {
-            //the table is empty. That means that an entry does not exists with the same ID
-            hashes.insert( entryPtr );
-        } else {
-            //The table is not empty. That means that an entry does exists with the same ID
-            //so we can add the entry to the database
-            delete table;
-            vector<string> keys;
-            table = new Table( keys );
-        }
-
     }
 
     return table;
