@@ -30,16 +30,24 @@
 #define CSCI2421_TABLE_H
 
 #include <vector>
+#include <iostream>
+#include <iomanip>
 #include "Entry.h"
 
 using std::vector;
+using std::ostream;
+using std::cout;
+using std::endl;
 
 class Table {
     friend class EntryPrinter;
 public:
     Table( const vector<string>& ); //constructor that accepts a vector containing the keys to the column names
+    ~Table( void );
+    friend ostream& operator<<( ostream& out, Table& );
     bool insert( Entry* ); //function to insert and entry into the table
     bool isEmpty( void ); //function to return if there are no entries in the table
+    void setKeys( vector<string>& );
     Entry* operator[]( int ); //access an entry in the table
     int size = 0; //increased on each insert
 
