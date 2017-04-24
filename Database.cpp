@@ -173,6 +173,8 @@ Table* Database::selectExactID( const QueryObject& query ) {
 
     //tree to hold all of the entries
     BSTree tree;
+
+    //return table
     Table *table = new Table(query.getColumns());
 
     //check the hash tables FileObject to see if it exists and that it is not empty
@@ -221,8 +223,10 @@ Table* Database::update( const QueryObject& query, Entry* entryPtr ) {
     for( int i = 0; i < hashes.prime; ++i ) {
         if ( hashes.files[i] != nullptr ) {
 
+            //tree to hold the entries
             BSTree tree;
 
+            //make sure the file is ready to be read
             hashes.files[i]->setForReading();
 
             //while the file in the hash table is not at EOF
@@ -232,8 +236,7 @@ Table* Database::update( const QueryObject& query, Entry* entryPtr ) {
                 tree.addNode(entry);
             };
 
-            //create a new eval object
-            //and traverse the tree
+            //create a new eval object and traverse the tree
             //eval's node variable will hold a pointer to the node with the target entry
             DeleteEvaluate eval;
             eval.tbl = table;
@@ -263,6 +266,7 @@ Table* Database::update( const QueryObject& query, Entry* entryPtr ) {
 }
 
 Table* Database::updateExactID( const QueryObject& query, Entry* entryPtr ) {
+
     //convert the string to a long because the hashing function
     //requires it to be a long, the hash it
     auto ID_long = long(stol( query.getCondition().value ));
@@ -270,6 +274,8 @@ Table* Database::updateExactID( const QueryObject& query, Entry* entryPtr ) {
 
     //tree to hold all of the entries
     BSTree tree;
+
+    //return table
     Table *table = new Table(query.getColumns());
 
     //check the hash tables FileObject to see if it exists and that it is not empty
@@ -294,9 +300,9 @@ Table* Database::updateExactID( const QueryObject& query, Entry* entryPtr ) {
         //search the tree for the node
         Node *entry = tree.findNode(temp_entry, tree.Root());
 
-        //if the search found a node, insert the node data into the table
+        //if the search found a node
         if (entry != nullptr) {
-            //First, copy the entry passed in into the entry of the tree
+            //First, copy the entry data passed in to the data of the entry in the tree
             (*entry->Key()) = *entryPtr;
 
             //make a copy of the node key so that it is not deleted at the end of the function
@@ -325,20 +331,23 @@ Table* Database::insert( Entry* entryPtr ) {
     // POSTCONDITION: Entry is added to the database. If the insert succeeds, a table with the entry
     // is returned. If insert fails, an empty table is returned
 
+    //return the table
     Table* table = nullptr;
 
     Entry& entry = *entryPtr;
 
+    //convert the string to a long because the hashing function
+    //requires it to be a long, the hash it
     auto ID_long = long(stol( entry[Entry::ID] ));
     auto ID_hash = hashes.hashify(ID_long);
 
     //test to see if there is an entry at hashes.files[ID_hash]
     if ( hashes.files[ID_hash] == nullptr ) {
         //if the file does not exists, then there must not be an entry with the same
-        //ID that already exists
+        //ID, so we can directly insert the entry
         hashes.insert( entryPtr );
     } else {
-        //There must be at least one entry that hashes to the same value
+        //otherwise, there must be at least one entry that hashes to the same value
         //So we need to search that file to see if an entry with the same
         //id already exists. Make a query with the correct data and see what
         //the selectExactId function returns
@@ -351,6 +360,7 @@ Table* Database::insert( Entry* entryPtr ) {
 
         if ( table->isEmpty() ) {
             //the table is empty. That means that an entry does not exists with the same ID
+            //Insert the entry, delete the old table and make a new one to hold the entry passed in
             hashes.insert( entryPtr );
             delete table;
             vector<string> keys;
@@ -371,14 +381,17 @@ Table* Database::insert( Entry* entryPtr ) {
 
 Table* Database::del( const QueryObject& query ) {
 
+    //return table
     Table *table = new Table(query.getColumns());
 
     //loop through the hash files and read in each value
     for( int i = 0; i < hashes.prime; ++i ) {
         if ( hashes.files[i] != nullptr ) {
 
+            //tree to hold the entries
             BSTree tree;
 
+            //make sure the file is ready to beread
             hashes.files[i]->setForReading();
 
             //while the file in the hash table is not at EOF
@@ -388,7 +401,8 @@ Table* Database::del( const QueryObject& query ) {
                 tree.addNode(entry);
             };
 
-            //create a new eval object
+            //create a new eval object that will filter out entries
+            //that do not fit the criteria
             DeleteEvaluate eval;
             eval.tbl = table;
             eval.condition = query.getCondition();
@@ -401,7 +415,7 @@ Table* Database::del( const QueryObject& query ) {
 
                 if ( hashes.counters[i] == 0 ) {
                     //if there are no entries in the file, just erase it
-                    //to set it back to an intial state
+                    //by setting it back to an intial state
                     hashes.files[i]->erase();
                 } else {
                     //if there is at least one entry in the file
@@ -437,8 +451,8 @@ Table* Database::delExactID( const QueryObject& query ) {
     BSTree tree;
     Table *table = new Table(query.getColumns());
 
-    //check the hash tables FileObject to see if it exists
-    if ( hashes.files[ID_hash]!= nullptr ) {
+    //check the hash tables FileObject to see if it exists and that it is not empty
+    if ( hashes.files[ID_hash]!= nullptr && hashes.counters[ID_hash] > 0 ) {
 
         //make sure that the file is ready to be read
         hashes.files[ID_hash]->setForReading();
@@ -462,16 +476,18 @@ Table* Database::delExactID( const QueryObject& query ) {
         //if the search found a node, insert the node data into the table
         if (entry != nullptr) {
             //make a copy of the node key so that it is not deleted at the end of the function
-            //Table now owns the entry pointer
+            //Table now owns the entry pointer. Delete the node from the tree and decrement the count
+            //of the hash table bucket
             Entry* row = new Entry( entry->Key() );
             table->insert( row );
             tree.deleteNode( entry->Key() );
             --hashes.counters[ID_hash];
 
             if ( hashes.counters[ID_hash] == 0 ) {
+                //if the hash table bucket is empty, just reset the file to its initial state
                 hashes.files[ID_hash]->erase();
             } else {
-                //rewrite the tree to file with the entry removed
+                //otherwise, rewrite the tree to file with the entry removed
                 WriteEvaluate writer;
                 writer.hashtable = &hashes;
                 tree.postorder(tree.Root(), writer);
@@ -484,36 +500,4 @@ Table* Database::delExactID( const QueryObject& query ) {
     }
 
     return table;
-}
-
-bool Database::evaluateConditions( Entry* entryPtr, const QueryObject& query ) {
-    bool is_match = false; //bool to hold the result of the condition check
-
-    //dereference the pointer so that we can access it like normal
-    Entry& entry = *entryPtr;
-
-    //First, check what condition we are checking for
-    //EQUALS (exact match)
-    //CONTAINS (field contains the value)
-
-    string key = query.getCondition().key;
-    string value = query.getCondition().value;
-
-    //EQUALS - exact match
-    if ( query.getCondition().operation == QueryObject::EQUALS) {
-        is_match = ( entry[ key ] == value );
-    }
-
-    //CONTAINS- field contains the value
-    else if ( query.getCondition().operation == QueryObject::CONTAINS ) {
-        //Use find to search the field for the value. If the value is found in
-        //the field, it will return an unsigned int. If not found, string::npos
-        //string::find referenced from
-        //http://www.cplusplus.com/reference/string/string/find/
-        if ( key.find( value ) != string::npos ) {
-            is_match = true;
-        }
-    }
-
-    return is_match;
 }
