@@ -52,12 +52,14 @@ public:
     bool setForReading();
     bool setForWriting();
     fstream& getFile(){ return file; };
+    void erase( void );
     string filename;
 private:
     std::fstream file;
     bool is_open_for_writing = false;
     bool is_open_for_reading = false;
     bool close();
+    bool initial_state = true;
 };
 
 
