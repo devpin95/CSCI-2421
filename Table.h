@@ -33,6 +33,7 @@
 #include <iostream>
 #include <iomanip>
 #include "Entry.h"
+#include "QueryObject.h"
 
 using std::vector;
 using std::ostream;
@@ -40,10 +41,11 @@ using std::cout;
 using std::endl;
 
 class Table {
-    friend class EntryPrinter;
+    friend class EntryValidate;
 public:
     Table( const vector<string>& ); //constructor that accepts a vector containing the keys to the column names
     ~Table( void );
+    Table* filter( QueryObject& );
     friend ostream& operator<<( ostream& out, Table& );
     bool insert( Entry* ); //function to insert and entry into the table
     bool isEmpty( void ); //function to return if there are no entries in the table
